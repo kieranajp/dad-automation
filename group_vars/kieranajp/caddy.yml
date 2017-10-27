@@ -1,0 +1,34 @@
+---
+ansible_pkg_manager: apt
+caddy_ssl_email: me@kieranajp.co.uk
+caddy_site_repository: gitlab.com/kieranajp/kieranajp.uk
+caddy_user: caddy
+caddy_features: http.git,http.hugo
+caddy_log_file: /var/log/caddy/caddy.log
+caddy_setcap: yes
+caddy_systemd_capabilities_enabled: yes
+caddy_systemd_network_dependency: False
+caddy_systemd_protect_home: False
+caddy_config: |
+  {{ inventory_hostname }} {
+    tls {{ caddy_ssl_email }}
+    redir https://www.{{ inventory_hostname }}{uri}
+  }
+
+  www.{{ inventory_hostname }} {
+    gzip
+    tls {{ caddy_ssl_email }}
+
+    root /srv/www/{{ inventory_hostname }}/public
+
+    git {{ caddy_site_repository }} {
+      path ../
+      interval 600
+      key /home/{{ caddy_user }}/.ssh/id_rsa
+      then brunch build
+      then hugo
+    }
+
+    # basicauth /hugo {{ HUGO_USERNAME }} {{ HUGO_PASSWORD }}
+    # hugo /srv/www/{{ inventory_hostname }} /hugo
+  }
